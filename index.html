@@ -71,7 +71,9 @@ body { font-family:'Georgia', serif; overflow:hidden; background:black; }
 .buttons button {
     font-size: 1em !important; /* slightly smaller text */ 
     line-height: 1 !important; /* remove extra vertical spacing */
-    padding: 4px 16px !important;  
+    padding: 6px 16px !important; /* small vertical padding */
+    height: auto !important; /* override browser default height */
+    min-height: 0 !important; /* remove extra min-height */
     border-radius: 25px !important;
     border: none !important;
     background: rgba(255,105,180,0.5) !important;  /* semi-transparent pink */
