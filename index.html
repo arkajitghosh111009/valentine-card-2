@@ -58,10 +58,9 @@ body { font-family:'Georgia', serif; overflow:hidden; background:black; }
 /* Buttons always visible, mobile & desktop */
 .buttons {
     position: fixed !important;
-    top:70% !important;
-    bottom: auto !important; 
-    left: 50% !important; /* center horizontally */
-    transform: translateX(-50%) !important;
+    top:70% !important; /* move buttons vertically on screen */
+    left: 50% !important; /* center horizontal */
+    transform: translate(-50%, -50%) !important; /* center both */
     display: flex !important;
     justify-content: center !important;
     gap: 12px !important;
