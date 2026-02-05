@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Valentine Card</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:'Georgia', serif; overflow:hidden; background:black; }
+
+.slider { width:100vw; height:100vh; position:relative; perspective:1500px; }
+
+.slide {
+    position:absolute; width:100%; height:100%;
+    backface-visibility:hidden;
+    transform-style: preserve-3d;
+    display:flex; justify-content:center; align-items:center;
+    transition: transform 1s ease-in-out, opacity 0.8s ease-in-out;
+    opacity:0;
+    transform: rotateY(180deg);
+}
+.slide.active { opacity:1; transform: rotateY(0deg); z-index:1; }
+.slide.prev { z-index:0; }
+
+.slide img {
+    width: auto;
+    height: 98%;        /* slightly bigger images */
+    max-width: 100%;
+    object-fit: contain; /* full image visible */
+    transform: translateY(-2%); /* move slightly upward */
+}
+
+.text-overlay {
+    position:absolute;
+    font-size:2em; 
+    font-weight:bold;
+    opacity:0;
+    pointer-events:none;
+    text-align:center;
+    max-width:80%;
+    line-height:1.3em;
+    white-space: pre-line;
+}
+
+#text0 { bottom:15%; left:50%; transform:translateX(-50%); }
+#text1 { bottom:18%; left:50%; transform:translateX(-50%); }
+#text2 { bottom:18%; left:50%; transform:translateX(-50%); }
+#text3 { bottom:22%; left:50%; transform:translateX(-50%); }
+
+#finalText {
+    position:absolute; top:50%; left:50%; transform:translate(-50%,0);
+    font-size:2em;
+    font-weight:bold; opacity:0;
+    pointer-events:none; text-align:center; z-index:30;
+    text-shadow:0 0 10px rgba(255,105,180,0.7);
+}
+
+/* Buttons always visible, mobile & desktop */
+.buttons {
+    position: fixed !important;
+    bottom:120px !important; /* distance from bottom of screen */
+    left: 50% !important; /* center horizontally */
+    transform: translateX(-50%) !important;
+    display: flex !important;
+    justify-content: center !important;
+    gap: 12px !important;
+    z-index: 9999999 !important;
+    pointer-events: auto !important;
+}
+
+.buttons button {
+    font-size: 1.1em !important;  
+    padding: 12px 20px !important;  
+    border-radius: 25px !important;
+    border: none !important;
+    background: rgba(255,105,180,0.5) !important;  /* semi-transparent pink */
+    color: white !important;
+    cursor: pointer !important;
+    font-weight: bold !important;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+}
+.buttons button:hover {
+    background: rgba(255,105,180,0.7) !important;
+}
+
+#effects { position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:15; }
+
+@media (max-width:768px){
+    .text-overlay { 
+        font-size: clamp(1em,5vw,1.5em); 
+        max-width:90%; 
+        bottom:12%;
+    }
+    #finalText { font-size: clamp(1.2em,6vw,1.8em); }
+    .buttons button { font-size:1em; padding:7px 14px; }
+    .slide img { height:95%; transform:translateY(-2%); }   /* slightly smaller on mobile */
+    .buttons { bottom:40px !important; } /* fully visible buttons on mobile */
+}
+</style>
+</head>
+<body>
+
+<div class="slider">
+  <div class="slide active">
+    <img src="1.png">
+    <div class="text-overlay" id="text0"></div>
+  </div>
+  <div class="slide">
+    <img src="2.png">
+    <div class="text-overlay" id="text1"></div>
+  </div>
+  <div class="slide">
+    <img src="3.png">
+    <div class="text-overlay" id="text2"></div>
+  </div>
+  <div class="slide">
+    <img src="4.png">
+    <div class="text-overlay" id="text3"></div>
+  </div>
+
+  <div id="finalText">I will eagerly wait for your reply...</div>
+
+  <div class="buttons">
+      <button onclick="prevSlide()">Previous</button>
+      <button onclick="nextSlide()">Next</button>
+  </div>
+
+  <canvas id="effects"></canvas>
+</div>
+
+<audio id="flipSound" src="https://cdn.jsdelivr.net/gh/arkajitghosh/freesounds/whoosh.mp3"></audio>
+
+<script>
+let current=0;
+const slides=document.querySelectorAll('.slide');
+const texts=[...document.querySelectorAll('.text-overlay')];
+const finalText=document.getElementById('finalText');
+
+const textsContent = [
+  "Happy Valentines Day to my PSYCO MADAM...",
+  "I kept the gift ready,\neven before knowing if you would come to take it.",
+  "Everyone uses today to ask for something.\nI'll do the opposite.\nThank you - for existing the way you do,\nand unknowingly making some days lighter.",
+  "Like the sun needs day to shine\nand the moon needs night,\nI ask you softly - will you be mine...?"
+];
+
+let typewriterInterval;
+
+function showSlide(index){
+    if(typewriterInterval) clearTimeout(typewriterInterval);
+    slides.forEach((s,i)=>{
+        s.classList.remove('active','prev');
+        texts[i].style.opacity=0;
+        if(i==index) s.classList.add('active');
+        else if(i==((index-1+slides.length)%slides.length)) s.classList.add('prev');
+    });
+    animateText(index);
+    playFlipSound();
+}
+
+function nextSlide(){ 
+    current=(current+1)%slides.length; 
+    showSlide(current); 
+}
+function prevSlide(){ 
+    current=(current-1+slides.length)%slides.length; 
+    showSlide(current); 
+}
+
+showSlide(current);
+
+// Rainbow typewriter effect
+function animateText(index){
+    texts.forEach(t=>t.style.opacity=0);
+    finalText.style.opacity=0;
+
+    const el=texts[index];
+    const fullText = textsContent[index];
+    el.innerHTML = "";
+    el.style.opacity = 1;
+
+    const colors=['#ff0000','#ff7f00','#ffff00','#00ff00','#0000ff','#4b0082','#8b00ff'];
+    let i=0;
+
+    function type(){
+        if(i<fullText.length){
+            let char = fullText.charAt(i);
+            if(char === "\n") el.innerHTML += "\n";
+            else{
+                const span = document.createElement('span');
+                span.textContent = char;
+                span.style.color = colors[i % colors.length];
+                el.appendChild(span);
+            }
+            i++;
+            typewriterInterval=setTimeout(type,150);
+        } else {
+            if(index===slides.length-1){
+                setTimeout(()=>{ floatFinalTextCalm(); },500);
+            }
+        }
+    }
+    type();
+}
+
+// Calm final floating text
+function floatFinalTextCalm(){
+    finalText.style.opacity=1;
+    let pos=50;
+    const interval=setInterval(()=>{
+        pos -= 0.05;
+        finalText.style.top = pos + '%';
+        if(pos < 40){ clearInterval(interval); }
+    },20);
+}
+
+// Flip sound
+function playFlipSound(){
+    const audio=document.getElementById('flipSound');
+    audio.currentTime=0;
+    audio.play().catch(()=>{}); 
+}
+
+// Particles: balloons + confetti
+const canvas = document.getElementById('effects');
+const ctx = canvas.getContext('2d');
+let W=canvas.width=window.innerWidth;
+let H=canvas.height=window.innerHeight;
+let particles=[];
+
+function random(min,max){ return Math.random()*(max-min)+min; }
+
+function initParticles(){
+  particles=[];
+  for(let i=0;i<80;i++){
+      particles.push({
+          x: random(0,W),
+          y: random(0,H),
+          r: random(8,15),
+          d: random(1,3),
+          color: `hsl(${random(0,360)},70%,60%)`,
+          tilt: random(-10,10),
+          tiltAngle:0,
+          tiltAngleIncrement:random(0.05,0.12),
+          type: Math.random()<0.5 ? 'balloon' : 'confetti'
+      });
+  }
+}
+
+function drawParticles(){
+  ctx.clearRect(0,0,W,H);
+  particles.forEach(p=>{
+      p.tiltAngle += p.tiltAngleIncrement;
+      p.y += (Math.cos(p.d)+1+p.r/2)/2;
+      p.x += Math.sin(p.tiltAngle)*2;
+
+      if(p.y>H){ p.y=-10; p.x=random(0,W); }
+
+      ctx.save();
+      ctx.translate(p.x,p.y);
+      ctx.rotate(p.tiltAngle/5);
+      ctx.fillStyle=p.color;
+
+      if(p.type==='balloon'){
+          ctx.beginPath();
+          ctx.ellipse(0,0,p.r*0.7,p.r,0,0,Math.PI*2);
+          ctx.fill();
+          ctx.beginPath();
+          ctx.moveTo(0,p.r);
+          ctx.lineTo(0,p.r+10);
+          ctx.strokeStyle=p.color;
+          ctx.lineWidth=2;
+          ctx.stroke();
+      } else {
+          ctx.fillRect(-p.r/2,-p.r/2,p.r,p.r);
+      }
+
+      ctx.restore();
+  });
+  requestAnimationFrame(drawParticles);
+}
+
+function startEffects(){
+  initParticles();
+  drawParticles();
+}
+startEffects();
+
+// Click / Touch hearts
+document.addEventListener('click', function(e){ createHeart(e.clientX,e.clientY); });
+document.addEventListener('touchstart', function(e){
+  const t=e.touches[0];
+  createHeart(t.clientX,t.clientY);
+});
+
+function createHeart(x,y){
+    const heart = document.createElement('div');
+    heart.innerHTML='❤️';
+    heart.style.position='absolute';
+    heart.style.left=(x-10)+'px';
+    heart.style.top=(y-10)+'px';
+    heart.style.fontSize=Math.floor(Math.random()*18+18)+'px';
+    heart.style.opacity=1;
+    heart.style.pointerEvents='none';
+    heart.style.transition='all 2s linear';
+    document.body.appendChild(heart);
+
+    setTimeout(()=>{
+        heart.style.top=(y-150)+'px';
+        heart.style.opacity=0;
+        heart.style.transform=`rotate(${Math.random()*360}deg)`;
+    },10);
+
+    setTimeout(()=>heart.remove(),2000);
+}
+
+// Resize
+window.addEventListener('resize',()=>{
+  W=canvas.width=window.innerWidth;
+  H=canvas.height=window.innerHeight;
+  startEffects();
+});
+
+// Force buttons visible on mobile
+window.addEventListener('load', () => {
+    const buttons = document.querySelector('.buttons');
+    buttons.style.zIndex = '9999999';
+    buttons.style.position = 'fixed';
+});
+</script>
+
+</body>
+</html>
