@@ -73,7 +73,8 @@ body { font-family:'Georgia', serif; overflow:hidden; background:black; }
     line-height: 1 !important; /* remove extra vertical spacing */
     padding: 6px 16px !important; /* small vertical padding */
     height: auto !important; /* override browser default height */
-    min-height: 0 !important; /* remove extra min-height */
+    min-height: 0 !important; /* remove any forced min-height */
+    max-height: 40px !important; /* caps the button height */
     border-radius: 25px !important;
     border: none !important;
     background: rgba(255,105,180,0.5) !important;  /* semi-transparent pink */
@@ -81,6 +82,9 @@ body { font-family:'Georgia', serif; overflow:hidden; background:black; }
     cursor: pointer !important;
     font-weight: bold !important;
     box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    display: flex !important; /*centers content */
+    justify-content: center;
+    align-items: center;
 }
 .buttons button:hover {
     background: rgba(255,105,180,0.7) !important;
